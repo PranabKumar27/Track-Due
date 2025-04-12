@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Udhari Tracker</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-top: 20px;
+        }
+
+        h1:hover {
+            color: red;
+        }
+
+        .input-group {
+            margin: 20px;
+        }
+
+        input,
+        button {
+            padding: 8px;
+            margin: 5px;
+            border-radius: 5px;
+            border: none;
+            outline: none;
+        }
+
+        button {
+            background-color: red;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: darkred;
+        }
+
+        .tbl {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 0 10px whitesmoke;
+        }
+
+        table:hover {
+            box-shadow: 0 0 10px red;
+        }
+
+        th,
+        td {
+            border: 2px solid white;
+            padding: 10px;
+            text-align: center;
+        }
+
+        td:hover {
+            box-shadow: 0px 10px 2px red;
+        }
+
+        .total-container {
+            background-color: black;
+            margin-top: 20px;
+            font-size: 20px;
+        }
+
+        .action-buttons button {
+            margin: 0 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Udhari Tracker</h1>
+
+    <div class="input-group">
+        <input type="date" id="dateInput" />
+        <input type="number" id="amountInput" placeholder="Enter Amount" />
+        <button onclick="addEntry()">Add</button>
+    </div>
+
+    <div class="tbl">
+        <table id="udhariTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Amount (₹)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <div class="total-container" id="totalDisplay">Total: ₹0</div>
+
+    <script>
+        const tableBody = document.getElementById('tableBody');
+        const totalDisplay = document.getElementById('totalDisplay');
+        const dateInput = document.getElementById('dateInput');
+        const amountInput = document.getElementById('amountInput');
+
+        let entries = JSON.parse(localStorage.getItem('udhariEntries')) || [];
+
+        function updateLocalStorage() {
+            localStorage.setItem('udhariEntries', JSON.stringify(entries));
+        }
+
+        function updateTable() {
+            tableBody.innerHTML = '';
+            let total = 0;
+
+            entries.forEach((entry, index) => {
+                const row = document.createElement('tr');
+
+                const dateCell = document.createElement('td');
+                dateCell.innerText = entry.date;
+
+                const amountCell = document.createElement('td');
+                amountCell.innerText = `₹${entry.amount}`;
+
+                const actionCell = document.createElement('td');
+                actionCell.classList.add('action-buttons');
+
+                const editBtn = document.createElement('button');
+                editBtn.innerText = 'Edit';
+                editBtn.onclick = () => editEntry(index);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.innerText = 'Delete';
+                deleteBtn.onclick = () => deleteEntry(index);
+
+                actionCell.appendChild(editBtn);
+                actionCell.appendChild(deleteBtn);
+
+                row.appendChild(dateCell);
+                row.appendChild(amountCell);
+                row.appendChild(actionCell);
+
+                tableBody.appendChild(row);
+
+                total += parseFloat(entry.amount);
+            });
+
+            totalDisplay.innerText = `Total: ₹${total}`;
+        }
+
+        function addEntry() {
+            const date = dateInput.value;
+            const amount = amountInput.value;
+
+            if (!date || !amount) return;
+
+            entries.push({ date, amount });
+            updateLocalStorage();
+            updateTable();
+
+            dateInput.value = '';
+            amountInput.value = '';
+        }
+
+        function deleteEntry(index) {
+            entries.splice(index, 1);
+            updateLocalStorage();
+            updateTable();
+        }
+
+        function editEntry(index) {
+            const row = tableBody.children[index];
+            const entry = entries[index];
+
+            const dateCell = row.children[0];
+            const amountCell = row.children[1];
+            const actionCell = row.children[2];
+
+            // Create input fields
+            dateCell.innerHTML = `<input type="date" value="${entry.date}" />`;
+            amountCell.innerHTML = `<input type="number" value="${entry.amount}" />`;
+
+            // Replace buttons
+            actionCell.innerHTML = '';
+
+            const saveBtn = document.createElement('button');
+            saveBtn.innerText = 'Save';
+            saveBtn.onclick = () => {
+                const newDate = dateCell.querySelector('input').value;
+                const newAmount = amountCell.querySelector('input').value;
+                if (!newDate || !newAmount) return;
+
+                entries[index] = { date: newDate, amount: newAmount };
+                updateLocalStorage();
+                updateTable();
+            };
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.innerText = 'Cancel';
+            cancelBtn.onclick = updateTable;
+
+            actionCell.appendChild(saveBtn);
+            actionCell.appendChild(cancelBtn);
+        }
+
+        amountInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                addEntry();
+            }
+        });
+
+        // Initial load
+        updateTable();
+    </script>
+</body>
+
+</html>
